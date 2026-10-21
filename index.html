@@ -804,6 +804,79 @@ body.flow #results{overflow:visible;height:auto;min-height:0;flex:none}
 .sb svg{color:#b4ab97}
 .sb input::placeholder{color:#8a8274}
 
+
+/* 디스플레이(VFD) 글자 확대 */
+.vlab{font-size:10px}
+.vnotes{font-size:18px;gap:1px 9px}
+.vsub{font-size:12px}
+.vmsg{font-size:12.5px}
+.vhead{font-size:30px}
+@media(max-height:700px){ .vnotes{font-size:16px} .vhead{font-size:26px} }
+@media(min-height:900px){ .vnotes{font-size:20px} .vhead{font-size:34px} }
+
+/* 결과 영역 글자 확대 */
+.sym{font-size:21px}
+.name{font-size:16.5px}
+.ko{font-size:12.5px}
+.fam{font-size:11.5px}
+.deg{font-size:12.5px}
+.chip{font-size:13px;min-width:26px}
+.pbtn{font-size:12.5px}
+.empty{font-size:13.5px}
+.item.near .name{font-size:15.5px}
+.item.near .ko{font-size:11.5px}
+.item.near .miss{font-size:11.5px}
+.item.near .chip{font-size:12.5px}
+.item.near .pbtn{font-size:11.5px}
+.nearmsg{font-size:12.5px}
+.more{font-size:12.5px}
+th{font-size:11.5px}
+td{font-size:13.5px}
+td.res{font-size:14.5px}
+.tips li{font-size:13px}
+@media(max-width:360px){ .pbtn{font-size:11.5px} .item.near .pbtn{font-size:10.5px} }
+
+
+/* 디스플레이 라벨(INPUT · 이조 안내) 확대 — 패널 높이 유지 */
+.vlab{font-size:12px;line-height:1.05;letter-spacing:.07em}
+.vnotes{line-height:1.02;margin-top:1px}
+.vsub{line-height:1.1;margin-top:1px}
+.vhead{line-height:.98}
+.glass{padding-top:3px;padding-bottom:3px}
+
+
+/* 이조 안내를 디스플레이 맨 윗줄 오른쪽에 — 코드명 열 폭과 무관하게 넓게 표시 */
+.dr{padding-top:13px}
+.dr .vtune{position:absolute;right:0;top:0;max-width:calc(100vw - 190px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.creal{display:none}
+@media(min-width:600px){ .creal{display:inline} .dr .vtune{max-width:none} }
+
+
+/* 누른음 디스플레이: 패널 +10%, 누른 음 한 단계↑, 위아래 설명줄 반 단계↑, 줄 간격 +2px */
+.glass{min-height:57px}
+.vlab{font-size:13px}
+.vnotes{font-size:20px;margin-top:3px}
+.vsub{font-size:13px;margin-top:3px}
+.vmsg{margin-top:3px}
+.dr{padding-top:16px}
+@media(max-height:700px){ .glass{min-height:55px} .vnotes{font-size:18px} }
+@media(min-height:900px){ .glass{min-height:60px} .vnotes{font-size:22px} }
+
+
+.vlab{line-height:1;letter-spacing:.03em}
+.vnotes{line-height:.95}
+.vsub{line-height:1}
+
+.dr .vtune{max-width:calc(100vw - 168px)}
+@media(min-width:600px){ .dr .vtune{max-width:none} }
+
+/* 이조 안내는 대문자 변환 없이 (Bb가 BB로 보이지 않게) */
+.vtune{text-transform:none}
+
+/* 부제 자간 축소 */
+.sub2{letter-spacing:.02em}
+@media(min-width:421px){ .sub2{letter-spacing:.08em} }
+
 /* 시작 스플래시 (원본 유지) */
 #splash{position:fixed;inset:0;z-index:999;background:#0A0A0B;display:flex;align-items:center;justify-content:center;transition:opacity .28s ease}
 #splash.out{opacity:0;pointer-events:none}
@@ -1567,7 +1640,7 @@ function renderDisplay(A){
   if(S.playMode){
     h+='<div class="dl"><div class="vlab">Play Mode · 연주 모드</div>'
      + '<div class="vmsg">건반을 자유롭게 눌러 연주하세요. 선택과 분석은 잠시 꺼집니다.</div></div>'
-     + '<div class="dr"><div class="vlab">'+tl+' 기보</div><div class="vhead">♪</div></div>';
+     + '<div class="dr"><div class="vlab vtune">'+tl+' 기보</div><div class="vhead">♪</div></div>';
   } else {
     h+='<div class="dl"><div class="vlab">Input · 누른 음'+(S.sel.length?' '+pad2(S.sel.length):'')+'</div>';
     if(!A.pcs.length){
@@ -1577,7 +1650,7 @@ function renderDisplay(A){
        + '<div class="vsub">'+nm(A.bass,A.flat)+' 기준 · '+A.pcs.map(function(p){return IVL[mod(p-A.bass)];}).join(' · ')+'</div>';
     }
     var off=offset();
-    h+='</div><div class="dr"><div class="vlab">'+tl+' 기보 · '+tuneHint()+(off?' · C=실음 '+nm(-off,isFlat(-off)):'')+'</div>'
+    h+='</div><div class="dr"><div class="vlab vtune">'+tl+' 기보 · '+tuneHint()+(off?'<span class="creal"> · C=실음 '+nm(-off,isFlat(-off))+'</span>':'')+'</div>'
      + (A.headline?'<div class="vhead">'+A.headline+'</div>':'<div class="vhead ghost">----</div>')+'</div>';
   }
   $('glass').innerHTML=h;
