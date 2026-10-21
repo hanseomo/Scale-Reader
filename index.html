@@ -749,6 +749,30 @@ body.flow #results{overflow:visible;height:auto;min-height:0;flex:none}
 .oscroll.act .othumb{background:rgba(234,223,196,.75)}
 .oscroll.drag .othumb{width:7px;right:1px;background:var(--amber)}
 
+
+/* 건반 높이 (+10% 두 차례) */
+.kb{height:135px}
+@media(max-height:700px){ .kb{height:111px} }
+@media(min-height:900px){ .kb{height:165px} }
+
+/* 가까운 후보: 세로 여백 축소 */
+.nearmsg{margin:-1px 2px -2px;font-size:11.5px;line-height:1.3}
+.item.near{padding:5px 8px}
+.item.near .irow{gap:6px;align-items:center}
+.item.near .name{font-size:14.5px;line-height:1.2}
+.item.near .ko{font-size:10.5px;margin-left:5px}
+.item.near .miss{font-size:10.5px}
+.item.near .chips{margin-top:3px;gap:3px}
+.item.near .chip{font-size:11.5px;padding:0 5px;line-height:17px}
+.item.near .pbtns{margin-top:4px}
+.item.near .pbtn{min-height:27px}
+.item.near .irow{flex-wrap:nowrap}
+.item.near .name{flex:0 0 auto}
+.item.near .chips{margin-top:0;flex:0 1 auto;min-width:0;flex-wrap:nowrap;overflow:hidden}
+.item.near .miss{margin-left:auto;flex:0 0 auto}
+.item.near .pbtn{gap:3px;padding:0 2px;font-size:10.5px}
+.item.near .pbtn .led{display:none}
+
 /* 시작 스플래시 (원본 유지) */
 #splash{position:fixed;inset:0;z-index:999;background:#0A0A0B;display:flex;align-items:center;justify-content:center;transition:opacity .28s ease}
 #splash.out{opacity:0;pointer-events:none}
@@ -1130,7 +1154,8 @@ function bevelFilter(id,blur,scale,exp,kc,lx,ly,lz,grain){
 }
 
 /* ── VU 미터 (실제 출력 레벨, 기계식 바늘 관성) ───────── */
-var VU_A=48, VU_PX=60, VU_PY=80, VU_CAL=12;
+/* 미터 기준점: 단음 기준 볼륨 7 ≈ 0 VU, 볼륨 10 ≈ +3 VU(빨간 구간 끝) — 실제 출력 레벨을 측정해 보정 */
+var VU_A=48, VU_PX=60, VU_PY=80, VU_CAL=13.5, vuEnv=0;
 var VU_LO=Math.pow(10,-20/20), VU_HI=Math.pow(10,3/20);
 function vuP(db){ return (Math.pow(10,db/20)-VU_LO)/(VU_HI-VU_LO); }
 function vuAng(p){ return -VU_A+2*VU_A*p; }
@@ -1184,24 +1209,30 @@ var vuPos=-0.04, vuVel=0, vuLast=0, vuBuf=null, peakUntil=0, needleEl=null, vuEl
 function vuTick(t){
   requestAnimationFrame(vuTick);
   var dt=vuLast?Math.min(0.05,(t-vuLast)/1000):0.016; vuLast=t;
-  var target=-0.04, db=-60;
+  var target=-0.04, db=-60, a=0;
   if(analyser && S.sound && ctx && ctx.state==="running"){
-    if(!vuBuf) vuBuf=new Uint8Array(analyser.fftSize);
-    analyser.getByteTimeDomainData(vuBuf);
-    var sum=0;
-    for(var i=0;i<vuBuf.length;i++){ var v=(vuBuf[i]-128)/128; sum+=v*v; }
-    db=20*Math.log10(Math.sqrt(sum/vuBuf.length)+1e-9)+VU_CAL;
-    target=Math.max(-0.04,Math.min(1.06,vuP(db)));
+    var flt=!!analyser.getFloatTimeDomainData, sum=0, i, v;
+    if(!vuBuf) vuBuf=flt?new Float32Array(analyser.fftSize):new Uint8Array(analyser.fftSize);
+    if(flt){ analyser.getFloatTimeDomainData(vuBuf); for(i=0;i<vuBuf.length;i++){ v=vuBuf[i]; sum+=v*v; } }
+    else { analyser.getByteTimeDomainData(vuBuf); for(i=0;i<vuBuf.length;i++){ v=(vuBuf[i]-128)/128; sum+=v*v; } }
+    a=Math.sqrt(sum/vuBuf.length);
+  }
+  /* 엔벨로프: 빠르게 올라가고 천천히(0.45초) 내려와 바늘이 소리를 따라 충분히 머무름 */
+  if(a>vuEnv) vuEnv+=(a-vuEnv)*(1-Math.exp(-dt/0.012));
+  else vuEnv*=Math.exp(-dt/0.45);
+  if(vuEnv>1e-6){
+    db=20*Math.log10(vuEnv)+VU_CAL;
+    target=Math.max(-0.04,Math.min(1.03,vuP(db)));
   }
   /* 스프링-댐퍼: VU 표준(약 300ms)에 가깝고 살짝 넘쳤다가 돌아옴 */
   vuVel+=(170*(target-vuPos)-20*vuVel)*dt;
   vuPos+=vuVel*dt;
   if(vuPos<-0.045){ vuPos=-0.045; vuVel=0; }
-  if(vuPos>1.07){ vuPos=1.07; vuVel=0; }
+  if(vuPos>1.06){ vuPos=1.06; vuVel=0; }
   var ang=Math.round(vuAng(vuPos)*10)/10;
   if(!needleEl) needleEl=document.getElementById("needle");
   if(needleEl && ang!==lastAng){ needleEl.setAttribute("transform","rotate("+ang+" 60 80)"); lastAng=ang; }
-  if(db>1.5) peakUntil=t+450;
+  if(db>2.2) peakUntil=t+450;
   if(!vuEl) vuEl=$("vu");
   if(vuEl){
     var pk=t<peakUntil;
@@ -1213,12 +1244,8 @@ function vuTick(t){
 /* ── 앱 볼륨 노브 (기기 음량과 별개) ─────────────────── */
 var VKEY="scaleReader.branch.volume", VOL=0.7, volNode=null, volDetent=7, kvalT=null;
 try{ var vv=parseFloat(localStorage.getItem(VKEY)); if(!isNaN(vv)&&vv>=0&&vv<=1) VOL=vv; }catch(e){}
-/* 오디오 테이퍼: 7 = 기준(0 dB), 10 = +3 dB, 0 = 무음 */
-function gainFor(p){
-  if(p<=0.002) return 0;
-  var db=p>=0.7?(p-0.7)/0.3*3:-50*Math.pow(1-p/0.7,1.6);
-  return Math.pow(10,db/20);
-}
+/* 선형 테이퍼: 노브 한 칸마다 소리 크기와 VU 바늘이 고르게 변함 (7 ≈ 0 dB 기준, 10 = +3 dB, 5 = -6 dB, 0 = 무음) */
+function gainFor(p){ return p<=0.002?0:1.4125*p; }
 function kAng(p){ return -135+270*p; }
 function kpol(r,a){ var t=a*Math.PI/180; return [35+r*Math.sin(t),34.4-r*Math.cos(t)]; }
 function initKnob(){
@@ -1598,12 +1625,12 @@ function renderResults(A){
           +playBtns(x.root,x.c.ivs,'c'+i,false,pcs,true)+'</div>';
       });
     } else {
-      h+='<p class="empty">정확히 맞는 코드는 없습니다. 가까운 후보:</p>';
+      h+='<p class="empty nearmsg">정확히 맞는 코드는 없습니다. 가까운 후보:</p>';
       A.chords.near.forEach(function(x,i){
         var f=isFlat(x.root);
-        h+='<div class="item"><div class="irow"><span class="name">'+nm(x.root,f)+x.c.sym+'<span class="ko">'+x.c.ko+'</span></span>'
-          +'<span class="miss">'+x.missing+'음 부족</span></div>'
+        h+='<div class="item near"><div class="irow"><span class="name">'+nm(x.root,f)+x.c.sym+'<span class="ko">'+x.c.ko+'</span></span>'
           +chipsHTML(x.c.ivs.map(function(v){return mod(x.root+v);}),pcs)
+          +'<span class="miss">'+x.missing+'음 부족</span></div>'
           +playBtns(x.root,x.c.ivs,'n'+i,false,pcs,true)+'</div>';
       });
     }
