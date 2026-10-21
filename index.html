@@ -877,6 +877,42 @@ td.res{font-size:14.5px}
 .sub2{letter-spacing:.02em}
 @media(min-width:421px){ .sub2{letter-spacing:.08em} }
 
+/* 로고 장평 확대 (가로 1.14배) — 늘어난 폭만큼 JS가 오른쪽 여백을 확보 */
+.brand{flex-shrink:0}
+.brand .script{display:inline-block;transform:scaleX(1.14);transform-origin:0 50%}
+
+/* 글로우 누른 음 한 단계 확대 */
+.vnotes{font-size:22px}
+@media(max-height:700px){ .vnotes{font-size:20px} }
+@media(min-height:900px){ .vnotes{font-size:24px} }
+
+/* 421~599px: 로고·부제는 두 줄 유지 (한 줄이면 가로 넘침) */
+@media(min-width:421px) and (max-width:599px){
+  .brand .script{font-size:20px;line-height:.9}
+  .script span,.sub2 span{display:block}
+  .sub2{font-size:7.5px;letter-spacing:.02em}
+}
+
+/* 부제는 항상 한 줄 */
+.sub2,.brand .sub2{white-space:nowrap}
+.sub2 span,.brand .sub2 span{display:inline!important}
+.sub2{margin-top:3px}
+
+/* 부제 한 줄 확보를 위한 좁은 폭 미세 조정 */
+@media(max-width:374px){
+  .head{gap:6px;padding-left:16px;padding-right:8px}
+  .mini{min-width:28px}
+  .hctl .vu{width:70px;margin-left:5px}
+  .sub2{font-size:6.6px}
+}
+@media(min-width:421px) and (max-width:599px){
+  .minis{gap:2px}
+  .mini{min-width:32px}
+  .hctl{--kw:51px;gap:4px}
+  .hline{width:6px}
+  .hctl .vu{width:84px;margin-left:8px}
+}
+
 /* 시작 스플래시 (원본 유지) */
 #splash{position:fixed;inset:0;z-index:999;background:#0A0A0B;display:flex;align-items:center;justify-content:center;transition:opacity .28s ease}
 #splash.out{opacity:0;pointer-events:none}
@@ -2231,6 +2267,15 @@ function initSB(){
   ['pointerup','pointercancel'].forEach(function(t){ tr.addEventListener(t,function(){ drag=null; tr.classList.remove('drag'); sbFlash(); }); });
 }
 
+
+/* 로고 장평: 확대된 만큼 옆 요소와 겹치지 않게 여백 확보 */
+function fitLogo(){
+  var sc=document.querySelector('.brand .script'); if(!sc) return;
+  sc.style.marginRight=(sc.offsetWidth*0.14).toFixed(1)+'px';
+}
+window.addEventListener('resize',fitLogo);
+try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fitLogo); }catch(e){}
+
 /* ── 시작 ───────────────────────────────────────────── */
 buildTextures();
 initVU();
@@ -2238,6 +2283,7 @@ initKnob();
 buildKb();
 initSearch();
 initHist();
+fitLogo();
 render();
 initSB();
 updateFlow();
