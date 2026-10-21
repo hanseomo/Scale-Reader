@@ -773,6 +773,37 @@ body.flow #results{overflow:visible;height:auto;min-height:0;flex:none}
 .item.near .pbtn{gap:3px;padding:0 2px;font-size:10.5px}
 .item.near .pbtn .led{display:none}
 
+
+/* 모듈 제목 한 단계 확대 — 헤더 높이 28px 고정 유지 */
+.mhead{height:28px;padding-top:0;padding-bottom:0;box-sizing:border-box}
+.mlabel{align-items:baseline;line-height:1}
+.mlabel .lg{font-size:13.5px;line-height:1}
+.mko{font-size:12.5px;line-height:1}
+.count{line-height:18px}
+
+
+/* 노브를 연결선 쪽으로: 노브 스커트 오른쪽 끝 → 선 간격 = 선 → 버튼 간격 (SVG 우측 여백 16.4/70 상쇄) */
+.hctl .knob{margin-right:calc(var(--kw) * -0.2343)}
+
+
+/* 노브 그룹을 VU 쪽으로: 왼쪽 조작 버튼과 그룹 분리감 */
+.hctl .vu{margin-left:6px}
+@media(min-width:421px){ .hctl .vu{margin-left:10px} }
+@media(min-width:760px){ .hctl .vu{margin-left:12px} }
+
+
+/* 볼륨 노브 +10%, 왼쪽 조작부를 로고 쪽으로 살짝 */
+.hctl{--kw:51px}
+.head .minis{margin-left:-3px}
+@media(min-width:421px){ .head .minis{margin-left:-4px} }
+
+
+/* 입력창 테두리: 주 조작부임을 드러내는 은은한 크롬 림 (크기 변화 없음) */
+.sb{box-shadow:inset 0 0 0 1px rgba(214,204,180,.30),inset 0 2px 5px rgba(0,0,0,.85),0 0 0 1px #000,0 1px 0 rgba(255,255,255,.10)}
+.sb:focus-within{box-shadow:inset 0 0 0 1px rgba(255,179,71,.75),inset 0 2px 5px rgba(0,0,0,.85),0 0 0 1px #000,0 0 7px rgba(255,179,71,.28)}
+.sb svg{color:#b4ab97}
+.sb input::placeholder{color:#8a8274}
+
 /* 시작 스플래시 (원본 유지) */
 #splash{position:fixed;inset:0;z-index:999;background:#0A0A0B;display:flex;align-items:center;justify-content:center;transition:opacity .28s ease}
 #splash.out{opacity:0;pointer-events:none}
