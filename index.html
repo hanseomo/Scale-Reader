@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<title>스케일 리더 브랜치</title>
+<title>스케일 리더</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="color-scheme" content="only dark">
 <meta name="supported-color-schemes" content="dark">
@@ -91,8 +91,6 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .model{font-family:var(--f-label);font-size:9.5px;font-weight:600;letter-spacing:.2em;color:var(--legend-dim);
   text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kname{font-size:11px;color:var(--legend-dim);white-space:nowrap}
-.brtag{display:inline-block;margin-left:5px;padding:0 5px;border-radius:2px;border:1px solid #6b4a14;
-  color:var(--amber);font-size:9.5px;font-weight:600;line-height:14px;vertical-align:1px}
 
 /* 볼륨 노브 (브리티시 콘솔 타입) */
 .hctl{--kw:72px;flex:0 0 auto;display:flex;align-items:flex-start;gap:6px}
@@ -1409,7 +1407,7 @@ function vuTick(t){
 
 
 /* ── 앱 볼륨 노브 (기기 음량과 별개) ─────────────────── */
-var VKEY="scaleReader.branch.volume", VOL=0.7, volNode=null, volDetent=7, kvalT=null;
+var VKEY="scaleReader.sr3.volume", VOL=0.7, volNode=null, volDetent=7, kvalT=null;
 try{ var vv=parseFloat(localStorage.getItem(VKEY)); if(!isNaN(vv)&&vv>=0&&vv<=1) VOL=vv; }catch(e){}
 /* 들리는 소리: 체감 음량이 노브 각도에 비례하도록 (진폭 ∝ 눈금^1.7, 10 = +3 dB, 7 ≈ -2 dB, 5 ≈ -7 dB, 3 ≈ -15 dB, 1 ≈ -30 dB) */
 function gainFor(p){ return p<=0.002?0:1.4125*Math.pow(p,1.7); }
@@ -2140,7 +2138,7 @@ function initSearch(){
 }
 
 /* ── 기록 (새로고침 · 다시 시작에도 유지) ──────────────── */
-var HKEY="scaleReader.branch.history.v1", HMAX=24, HIST=[];
+var HKEY="scaleReader.sr3.history.v1", HMAX=24, HIST=[];
 function loadHist(){
   try{
     var v=JSON.parse(localStorage.getItem(HKEY)||"[]");
