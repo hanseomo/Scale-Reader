@@ -935,6 +935,10 @@ td.res{font-size:14.5px}
 @media(min-width:421px){ .head .sbtn{margin-top:calc(var(--kw)*.4771 - 16px - 2px)} }
 @media(min-width:375px) and (max-width:420px){ .hctl .vu{width:72px} }
 
+/* 제목 패널 높이 +15% (요소는 세로 중앙) */
+.head{min-height:61px}
+@media(min-width:421px){ .head{min-height:66px} }
+
 /* 시작 스플래시 (원본 유지) */
 #splash{position:fixed;inset:0;z-index:999;background:#0A0A0B;display:flex;align-items:center;justify-content:center;transition:opacity .28s ease}
 #splash.out{opacity:0;pointer-events:none}
