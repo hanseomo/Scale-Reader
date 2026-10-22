@@ -913,6 +913,28 @@ td.res{font-size:14.5px}
   .hctl .vu{width:84px;margin-left:8px}
 }
 
+/* 로고는 항상 두 줄, 부제는 한 줄 — 폭은 fitLogo()가 맞춤 */
+.brand .script span{display:block!important}
+.brand .script{transform:none}
+.brand .sub2{padding-left:0}
+
+/* 넓은 화면도 최상단 패널 높이 억제: 두 줄 로고 크기 통일 */
+@media(min-width:600px){ .brand .script{font-size:20px;line-height:.9} .brand .sub2{font-size:8px;letter-spacing:.04em} }
+
+/* 조작부 3개를 로고에서 살짝 띄움 (+3px) */
+.head .minis{margin-left:0}
+@media(min-width:421px){ .head .minis{margin-left:-1px} }
+
+/* 볼륨 노브 +10% (51 → 56px) */
+.hctl,.head .hctl{--kw:56px}
+@media(min-width:421px) and (max-width:599px){ .head .hctl{--kw:56px} }
+/* 노브가 커져도 패널 높이는 그대로: 위아래 2px씩 패널 여백 안으로 겹쳐 놓고, 연결선·버튼 정렬도 같이 보정 */
+.head .knob{margin-top:-2px;margin-bottom:-2px}
+.head .hline{margin-top:calc(var(--kw)*.4771 - .8px - 2px)}
+.head .sbtn{margin-top:calc(var(--kw)*.4771 - 14px - 2px)}
+@media(min-width:421px){ .head .sbtn{margin-top:calc(var(--kw)*.4771 - 16px - 2px)} }
+@media(min-width:375px) and (max-width:420px){ .hctl .vu{width:72px} }
+
 /* 시작 스플래시 (원본 유지) */
 #splash{position:fixed;inset:0;z-index:999;background:#0A0A0B;display:flex;align-items:center;justify-content:center;transition:opacity .28s ease}
 #splash.out{opacity:0;pointer-events:none}
@@ -1167,7 +1189,8 @@ function ensureAudio(){
       master=ctx.createGain(); master.gain.value=1.15;
       analyser=ctx.createAnalyser(); analyser.fftSize=1024;
       volNode=ctx.createGain(); volNode.gain.value=gainFor(VOL);
-      master.connect(comp); comp.connect(volNode); volNode.connect(analyser); analyser.connect(ctx.destination);
+      /* 미터는 볼륨 노브 앞에서 측정하고 표시용 스케일을 따로 곱함 (들리는 크기와 보이는 바늘을 분리) */
+      master.connect(comp); comp.connect(analyser); analyser.connect(volNode); volNode.connect(ctx.destination);
     }
     if(ctx.state!=="running"){
       ctx.resume();
@@ -1355,7 +1378,7 @@ function vuTick(t){
     if(!vuBuf) vuBuf=flt?new Float32Array(analyser.fftSize):new Uint8Array(analyser.fftSize);
     if(flt){ analyser.getFloatTimeDomainData(vuBuf); for(i=0;i<vuBuf.length;i++){ v=vuBuf[i]; sum+=v*v; } }
     else { analyser.getByteTimeDomainData(vuBuf); for(i=0;i<vuBuf.length;i++){ v=(vuBuf[i]-128)/128; sum+=v*v; } }
-    a=Math.sqrt(sum/vuBuf.length);
+    a=Math.sqrt(sum/vuBuf.length)*meterGain(VOL);
   }
   /* 엔벨로프: 빠르게 올라가고 천천히(0.45초) 내려와 바늘이 소리를 따라 충분히 머무름 */
   if(a>vuEnv) vuEnv+=(a-vuEnv)*(1-Math.exp(-dt/0.012));
@@ -1384,8 +1407,10 @@ function vuTick(t){
 /* ── 앱 볼륨 노브 (기기 음량과 별개) ─────────────────── */
 var VKEY="scaleReader.branch.volume", VOL=0.7, volNode=null, volDetent=7, kvalT=null;
 try{ var vv=parseFloat(localStorage.getItem(VKEY)); if(!isNaN(vv)&&vv>=0&&vv<=1) VOL=vv; }catch(e){}
-/* 선형 테이퍼: 노브 한 칸마다 소리 크기와 VU 바늘이 고르게 변함 (7 ≈ 0 dB 기준, 10 = +3 dB, 5 = -6 dB, 0 = 무음) */
-function gainFor(p){ return p<=0.002?0:1.4125*p; }
+/* 들리는 소리: 체감 음량이 노브 각도에 비례하도록 (진폭 ∝ 눈금^1.7, 10 = +3 dB, 7 ≈ -2 dB, 5 ≈ -7 dB, 3 ≈ -15 dB, 1 ≈ -30 dB) */
+function gainFor(p){ return p<=0.002?0:1.4125*Math.pow(p,1.7); }
+/* 보이는 바늘: 노브 한 칸마다 VU 바늘이 고르게 움직이도록 선형 스케일 */
+function meterGain(p){ return p<=0.002?0:1.4125*p; }
 function kAng(p){ return -135+270*p; }
 function kpol(r,a){ var t=a*Math.PI/180; return [35+r*Math.sin(t),34.4-r*Math.cos(t)]; }
 function initKnob(){
@@ -2268,12 +2293,30 @@ function initSB(){
 }
 
 
-/* 로고 장평: 확대된 만큼 옆 요소와 겹치지 않게 여백 확보 */
-function fitLogo(){
-  var sc=document.querySelector('.brand .script'); if(!sc) return;
-  sc.style.marginRight=(sc.offsetWidth*0.14).toFixed(1)+'px';
+/* 로고 장평 자동 맞춤: Scale Reader(2줄)의 좌우 폭을 부제 Harmony Analyzer(1줄)와 정확히 같게 */
+function textRect(el){
+  /* 글자 자체의 폭(블록 상자 폭이 아니라)을 텍스트 노드 단위로 측정 */
+  var L=1e9,R=-1e9,T=1e9,B=-1e9,w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,null),n;
+  while((n=w.nextNode())){ if(!n.nodeValue.trim()) continue; var r=document.createRange(); r.selectNodeContents(n);
+    var q=r.getBoundingClientRect(); if(!q.width) continue; L=Math.min(L,q.left); R=Math.max(R,q.right); T=Math.min(T,q.top); B=Math.max(B,q.bottom); }
+  return L>R?{left:0,right:0,width:0}:{left:L,right:R,width:R-L,top:T,bottom:B};
 }
-window.addEventListener('resize',fitLogo);
+function fitLogo(){
+  var sc=document.querySelector('.brand .script'), sub=document.querySelector('.brand .sub2');
+  if(!sc||!sub) return;
+  sc.style.transform='none'; sc.style.marginRight='0px';
+  if(!sc.offsetWidth||!sub.offsetWidth) return;
+  var box=sc.getBoundingClientRect(), t=textRect(sc), u=textRect(sub);
+  if(!t.width||!u.width) return;
+  var k=u.width/t.width, ox=t.left-box.left, dx=u.left-t.left;
+  sc.style.transformOrigin=ox.toFixed(2)+'px 50%';
+  sc.style.transform='translateX('+dx.toFixed(2)+'px) scaleX('+k.toFixed(4)+')';
+  var right=t.left+dx+t.width*k, extra=right-Math.max(box.right,u.right);
+  if(extra>0) sc.style.marginRight=extra.toFixed(1)+'px';
+}
+var fitT=null;
+window.addEventListener('resize',function(){ clearTimeout(fitT); fitT=setTimeout(fitLogo,60); });
+window.addEventListener('orientationchange',function(){ setTimeout(fitLogo,250); });
 try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fitLogo); }catch(e){}
 
 /* ── 시작 ───────────────────────────────────────────── */
